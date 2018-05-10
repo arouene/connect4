@@ -48,9 +48,11 @@ static void
 draw_discs(int startx, int starty, unsigned char *board)
 {
 	for (int i = 0; i < NB_LINES; i++)
-		for (int j = 0; j < NB_COLS; j++)
-			if (board[i * NB_COLS + j] != 0)
-				draw_disc(startx, starty, j, i, board[i * NB_COLS + j]);
+		for (int j = 0; j < NB_COLS; j++) {
+			unsigned char player = board[i * NB_COLS + j];
+			if (player != NO_PLAYER)
+				draw_disc(startx, starty, j, i, player);
+		}
 }
 
 
@@ -95,19 +97,14 @@ draw_board(int startx, int starty)
 static void
 draw_candidate(int startx, int starty, int pos, unsigned char player)
 {
-	attron(COLOR_PAIR(player));
-
-	mvaddch(starty - 1, pos * WIDTH + startx + 1, ACS_BOARD);
-	mvaddch(starty - 1, pos * WIDTH + startx + 2, ACS_BOARD);
-
-	attroff(COLOR_PAIR(player));
+	draw_disc(startx, starty , pos, -1, player);
 }
 
 
 static void
 draw_instructions(void)
 {
-	mvprintw(0, 1, "Player 1: xx, Player 2: xx");
+	mvprintw(0, 1, "Player 1: xx  Player 2: xx");
 	mvprintw(2, 1, "LEFT:   Move left");
 	mvprintw(3, 1, "RIGHT:  Move right");
 	mvprintw(4, 1, "DOWN:   Insert disc");
@@ -142,9 +139,6 @@ check_4_inrow(unsigned char *board, int startx, int starty, int dirx, int diry)
 {
 	unsigned char player = board[starty * NB_COLS + startx];
 
-	if (player == NO_PLAYER)
-		return NO_PLAYER;
-
 	for (int i = 1; i < 4; i++) {
 		if (startx + i * dirx >= NB_COLS || startx + i * dirx < 0)
 			return NO_PLAYER;
@@ -165,6 +159,9 @@ check_victory(unsigned char *board)
 
 	for (int y = 0; y < NB_LINES; y++)
 		for (int x = 0; x < NB_COLS; x++) {
+			if (board[y * NB_COLS + x] == NO_PLAYER)
+				continue;
+
 			player =  check_4_inrow(board, x, y, 1, 0);   // Horizontal
 			player += check_4_inrow(board, x, y, 0, 1);   // Vertical
 			player += check_4_inrow(board, x, y, 1, 1);   // Diagonal 1
@@ -197,9 +194,6 @@ init_game(struct game_state *state)
 static void
 update(struct game_state *state, int ch)
 {
-	int starty = (LINES - NB_LINES * HEIGHT) / 2;
-	int startx = (COLS - NB_COLS * WIDTH) / 2;
-
 	if (ch == KEY_LEFT && state->candidate_pos > 0) {
 		state->candidate_pos--;
 	}
@@ -218,20 +212,30 @@ update(struct game_state *state, int ch)
 		init_game(state);
 	}
 
-	// redraw
-	clear();
-	draw_candidate(startx, starty, state->candidate_pos, state->turn);
-	draw_board(startx, starty);
-	draw_discs(startx, starty, state->board);
-	draw_instructions();
-	refresh();
-
 	// check victory
 	unsigned char winner = check_victory(state->board);
 	if (winner != NO_PLAYER) {
 		state->winner = winner;
-		mvprintw(LINES - 2, 1, "Victory of player %d", state->winner);
 	}
+}
+
+static void
+redraw(struct game_state *state)
+{
+	int starty = (LINES - NB_LINES * HEIGHT) / 2;
+	int startx = (COLS - NB_COLS * WIDTH) / 2;
+
+	clear();
+
+	draw_candidate(startx, starty, state->candidate_pos, state->turn);
+	draw_board(startx, starty);
+	draw_discs(startx, starty, state->board);
+	draw_instructions();
+	
+	if (state->winner != NO_PLAYER)
+		mvprintw(LINES - 2, 1, "Victory of player %d", state->winner);
+
+	refresh();
 }
 
 
@@ -275,6 +279,7 @@ main(int argc, char **argv)
 	int ch = 0;
 	while (true) {
 		update(&state, ch);
+		redraw(&state);
 		ch = getch();
 	}
 
