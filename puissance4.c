@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <ncurses.h>
+#include <assert.h>
 
 
 #define HEIGHT     2
@@ -108,6 +109,8 @@ update(int ch)
 
 	if (board == NULL)
 		board = calloc(NB_LINES * NB_COLS, sizeof(char));
+
+	assert(board != NULL);
 
 	int starty = (LINES - NB_LINES * HEIGHT) / 2;
 	int startx = (COLS - NB_COLS * WIDTH) / 2;
