@@ -14,7 +14,7 @@ static void
 draw_disc(int startx, int starty, int posx, int posy, int color)
 {
 	int x = posx * WIDTH + 1;
-    int y = posy * HEIGHT + 1;
+	int y = posy * HEIGHT + 1;
 
 	attron(COLOR_PAIR(color));
 
@@ -44,6 +44,7 @@ draw_board(int startx, int starty)
 
 	attron(COLOR_PAIR(3));
 
+	// draw grid
 	for (int i = starty; i <= endy; i += HEIGHT)
 		for (int j = startx; j <= endx; j++)
 			mvaddch(i, j, ACS_HLINE);
@@ -52,6 +53,7 @@ draw_board(int startx, int starty)
 		for (int j = starty; j <= endy; j++)
 			mvaddch(j, i, ACS_VLINE);
 
+	// draw joints
 	for (int i = startx + WIDTH; i <= endx - WIDTH; i += WIDTH) {
 		mvaddch(starty, i, ACS_TTEE);
 		mvaddch(endy, i, ACS_BTEE);
@@ -62,6 +64,7 @@ draw_board(int startx, int starty)
 		mvaddch(i, endx, ACS_RTEE);
 	}
 
+	// draw corners
 	mvaddch(starty, startx, ACS_ULCORNER);
 	mvaddch(starty, endx, ACS_URCORNER);
 	mvaddch(endy, startx, ACS_LLCORNER);
