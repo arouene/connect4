@@ -1,3 +1,3 @@
 # connect4
 
-![](https://imgur.com/fTKqxFX)
+![](https://i.imgur.com/fTKqxFX.png)
