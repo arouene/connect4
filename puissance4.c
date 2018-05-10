@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <signal.h>
 #include <ncurses.h>
 #include <assert.h>
@@ -18,6 +19,14 @@
 #define COLOR_PLAYER_1  COLOR_RED
 #define COLOR_PLAYER_2  COLOR_YELLOW
 #define COLOR_BOARD     COLOR_BLUE
+
+
+struct game_state {
+	unsigned char *board;
+	unsigned char turn;
+	unsigned char winner;
+	int candidate_pos;
+};
 
 
 static void
@@ -95,6 +104,25 @@ draw_candidate(int startx, int starty, int pos, unsigned char player)
 }
 
 
+static void
+draw_instructions(void)
+{
+	mvprintw(0, 1, "Player 1: xx, Player 2: xx");
+	mvprintw(2, 1, "LEFT:   Move left");
+	mvprintw(3, 1, "RIGHT:  Move right");
+	mvprintw(4, 1, "DOWN:   Insert disc");
+	mvprintw(5, 1, "SPACE:  Reset game");
+	mvprintw(6, 1, "CTRL+C: Quit");
+	attron(COLOR_PAIR(PLAYER_1));
+	mvaddch(0, 11, ACS_BOARD);
+	mvaddch(0, 12, ACS_BOARD);
+	attron(COLOR_PAIR(PLAYER_2));
+	mvaddch(0, 25, ACS_BOARD);
+	mvaddch(0, 26, ACS_BOARD);
+	attroff(COLOR_PAIR(PLAYER_2));
+}
+
+
 static bool
 insert_disc(unsigned char *board, int pos, unsigned char player)
 {
@@ -118,9 +146,9 @@ check_4_inrow(unsigned char *board, int startx, int starty, int dirx, int diry)
 		return NO_PLAYER;
 
 	for (int i = 1; i < 4; i++) {
-		if (startx + i * dirx > NB_COLS || startx + i * dirx < 0)
+		if (startx + i * dirx >= NB_COLS || startx + i * dirx < 0)
 			return NO_PLAYER;
-		else if (starty + i * diry > NB_LINES || starty + i * diry < 0)
+		else if (starty + i * diry >= NB_LINES || starty + i * diry < 0)
 			return NO_PLAYER;
 		else if (board[(starty + i * diry) * NB_COLS + (startx + i * dirx)] != player)
 			return NO_PLAYER;
@@ -151,45 +179,59 @@ check_victory(unsigned char *board)
 
 
 static void
-update(int ch)
+init_game(struct game_state *state)
 {
-	static int pos = 0;
-	static unsigned char player = PLAYER_1;
-	static unsigned char *board = NULL;
+	if (state->board == NULL)
+		state->board = calloc(NB_LINES * NB_COLS, sizeof(unsigned char));
+	else
+		memset(state->board, 0, NB_LINES * NB_COLS);
 
-	if (board == NULL)
-		board = calloc(NB_LINES * NB_COLS, sizeof(unsigned char));
+	assert(state->board != NULL);
 
-	assert(board != NULL);
+	state->turn = PLAYER_1;
+	state->winner = NO_PLAYER;
+	state->candidate_pos = 0;
+}
 
+
+static void
+update(struct game_state *state, int ch)
+{
 	int starty = (LINES - NB_LINES * HEIGHT) / 2;
 	int startx = (COLS - NB_COLS * WIDTH) / 2;
 
-	if (ch == KEY_LEFT && pos > 0) {
-		pos--;
+	if (ch == KEY_LEFT && state->candidate_pos > 0) {
+		state->candidate_pos--;
 	}
-	else if (ch == KEY_RIGHT && pos < 6) {
-		pos++;
+	else if (ch == KEY_RIGHT && state->candidate_pos < 6) {
+		state->candidate_pos++;
 	}
-	else if (ch == KEY_ENTER || ch == KEY_DOWN) {
+	else if (state->winner == NO_PLAYER && ch == KEY_DOWN) {
 		// fill board
-		int result = insert_disc(board, pos, player);
+		int result = insert_disc(state->board, state->candidate_pos, state->turn);
 
 		// change player
 		if (result == true)
-			player = (player == PLAYER_1) ? PLAYER_2 : PLAYER_1;
+			state->turn = (state->turn == PLAYER_1) ? PLAYER_2 : PLAYER_1;
+	}
+	else if (ch == ' ') {
+		init_game(state);
 	}
 
 	// redraw
 	clear();
-	draw_candidate(startx, starty, pos, player);
+	draw_candidate(startx, starty, state->candidate_pos, state->turn);
 	draw_board(startx, starty);
-	draw_discs(startx, starty, board);
+	draw_discs(startx, starty, state->board);
+	draw_instructions();
 	refresh();
 
 	// check victory
-	if (check_victory(board))
-		printw("Victory");
+	unsigned char winner = check_victory(state->board);
+	if (winner != NO_PLAYER) {
+		state->winner = winner;
+		mvprintw(LINES - 2, 1, "Victory of player %d", state->winner);
+	}
 }
 
 
@@ -226,10 +268,13 @@ main(int argc, char **argv)
 	init_pair(PLAYER_2, COLOR_PLAYER_2, COLOR_BLACK);
 	init_pair(BOARD, COLOR_BOARD, COLOR_BLACK);
 
+	struct game_state state = {0};
+	init_game(&state);
+
 	// game loop
 	int ch = 0;
 	while (true) {
-		update(ch);
+		update(&state, ch);
 		ch = getch();
 	}
 
