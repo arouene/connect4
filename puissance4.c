@@ -203,19 +203,19 @@ update(struct game_state *state, int ch)
 	else if (state->winner == NO_PLAYER && ch == KEY_DOWN) {
 		// fill board
 		int result = insert_disc(state->board, state->candidate_pos, state->turn);
-
-		// change player
-		if (result == true)
+		if (result == true) {
+			// change player
 			state->turn = (state->turn == PLAYER_1) ? PLAYER_2 : PLAYER_1;
+
+			// check victory
+			unsigned char winner = check_victory(state->board);
+			if (winner != NO_PLAYER) {
+				state->winner = winner;
+			}
+		}
 	}
 	else if (ch == ' ') {
 		init_game(state);
-	}
-
-	// check victory
-	unsigned char winner = check_victory(state->board);
-	if (winner != NO_PLAYER) {
-		state->winner = winner;
 	}
 }
 
