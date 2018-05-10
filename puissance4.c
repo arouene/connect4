@@ -4,10 +4,10 @@
 #include <ncurses.h>
 
 
-const int HEIGHT = 2;
-const int WIDTH = 3;
-const int NB_LINES = 6;
-const int NB_COLS = 7;
+#define HEIGHT     2
+#define WIDTH      3
+#define NB_LINES   6
+#define NB_COLS    7
 
 
 static void
@@ -22,12 +22,11 @@ draw_disc(int startx, int starty, int posx, int posy, int color)
 	mvaddch(starty + y, startx + x + 1, ACS_BOARD);
 
 	attroff(COLOR_PAIR(color));
-
 }
 
 
 static void
-draw_discs(int startx, int starty, int *board)
+draw_discs(int startx, int starty, char *board)
 {
 	for (int i = 0; i < NB_LINES; i++)
 		for (int j = 0; j < NB_COLS; j++)
@@ -78,14 +77,16 @@ static void
 draw_arrows(int startx, int starty, int pos, int color)
 {
 	attron(COLOR_PAIR(color));
+
 	mvaddch(starty - 1, pos * WIDTH + startx + 1, ACS_BOARD);
 	mvaddch(starty - 1, pos * WIDTH + startx + 2, ACS_BOARD);
+
 	attroff(COLOR_PAIR(color));
 }
 
 
 static bool
-insert_disc(int *board, int pos, int color)
+insert_disc(char *board, int pos, int color)
 {
 	for (int i = 5; i >= 0; i--) {
 		if (board[i * NB_COLS + pos] == 0) {
@@ -103,10 +104,10 @@ update(int ch)
 {
 	static int pos = 0;
 	static int color = 1;
-	static int *board = NULL;
+	static char *board = NULL;
 
 	if (board == NULL)
-		board = calloc(NB_LINES * NB_COLS, sizeof(int));
+		board = calloc(NB_LINES * NB_COLS, sizeof(char));
 
 	int starty = (LINES - NB_LINES * HEIGHT) / 2;
 	int startx = (COLS - NB_COLS * WIDTH) / 2;
