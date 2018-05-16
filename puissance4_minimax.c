@@ -257,30 +257,40 @@ struct ai_node {
 
 struct ai_state {
 	struct ai_node *root;
+	struct game_state *state;
 };
 
 static void
 game_state_clone(struct game_state *copy, struct game_state *orig)
 {
-	assert(copy->board == NULL);
+	*copy = *orig;
+
 	copy->board = calloc(NB_LINES * NB_COLS, sizeof(unsigned char));
 	assert(copy->board != NULL);
 
 	memcpy(copy->board, orig->board, NB_LINES * NB_COLS);
-
-	copy->turn = orig->turn;
-	copy->winner = orig->winner;
-	copy->candidate_pos = orig->candidate_pos;
 }
 
-static struct ai_node*
-ai_add_child()
+static void
+game_do_move(struct game_state *state)
 {
 
 }
 
-static struct ai_node*
-ai_del_child()
+static void
+ai_add_child(struct ai_node *n, int move, int score)
+{
+	struct ai_node *new_node = malloc(sizeof(struct ai_node));
+
+	new_node->move = move;
+	new_node->score = score;
+	new_node->nb_childs = 0;
+
+	n->childs[n->nb_childs++];
+}
+
+static void
+ai_del_child(struct ai_node *n)
 {
 
 }
@@ -288,24 +298,24 @@ ai_del_child()
 static void
 ai_build_tree(struct ai_state *ai)
 {
-	// for all six possible moves
-	for (int i = 0; i < 6; i++) {
+	// for all seven possible moves
+	for (int i = 0; i < NB_COLS; i++) {
 		ai->root->childs[i] = malloc(sizeof(struct ai_node));
 	}
 }
 
 static int
-ai_minmax(struct ai_node *n, int depth, int maximizing_player)
+ai_minimax(struct ai_state *ai, int depth, int maximizing_player)
 {
 	if (depth == 0)
 		return STATE_DRAW;
 
-	unsigned char player = check_victory(n->state->board);
+	unsigned char player = check_victory(ai->state->board);
 	if (player != NO_PLAYER)
 		return (player == maximizing_player) ? STATE_WIN : STATE_LOST;
 
 	int best_value = 0;
-	if (n->state->turn == maximizing_player) {
+	if (ai->state->turn == maximizing_player) {
 		best_value = INT_MIN;
 
 	}
@@ -320,7 +330,7 @@ static int
 ai_play(struct ai_state *ai)
 {
 	ai_build_tree(ai);
-	int best_move = ai_minmax(ai->root, AI_MAX_DEPTH, PLAYER_2);
+	int best_move = ai_minimax(ai, AI_MAX_DEPTH, PLAYER_2);
 	return best_move;
 }
 
