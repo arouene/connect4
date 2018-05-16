@@ -286,13 +286,21 @@ ai_add_child(struct ai_node *n, int move, int score)
 	new_node->score = score;
 	new_node->nb_childs = 0;
 
-	n->childs[n->nb_childs++];
+	n->childs[n->nb_childs++] = new_node;
 }
 
 static void
-ai_del_child(struct ai_node *n)
+ai_del_child(struct ai_node *n, int index)
 {
+	assert(index >= 0 && index < NB_COLS);
 
+	struct ai_node *old_node = n->childs[index];
+
+	if (old_node != NULL) {
+		n->childs[index] = NULL;
+		free(old_node);
+		n->nb_childs--;
+	}
 }
 
 static void
