@@ -152,6 +152,34 @@ check_4_inrow(unsigned char *board, int startx, int starty, int dirx, int diry)
 	return player;
 }
 
+static int
+check_vertical_score(unsigned char *board)
+{
+	int score_player_1 = 0, score_player_2 = 0;
+	int score[3] = {0};
+	int temp_score = 0;
+	unsigned char temp_player = 0;
+
+	for (int i = 0; i < NB_COLS; i++) {
+		temp_score = 0;
+		temp_player = board[i];
+		for (int j = 1; j < NB_LINES; j++) {
+			unsigned char player = board[j * NB_COLS + i];
+			if (player == temp_player) {
+				temp_score++;
+			} else {
+				if (score[player] < temp_score)
+					score[player] = temp_score;
+				temp_score = 0;
+				temp_player = player;
+			}
+		}
+		score_player_1 += score[PLAYER_1];
+		score_player_2 += score[PLAYER_2];
+		score[PLAYER_1] = 0; score[PLAYER_2] = 0;
+	}
+}
+
 
 static unsigned char
 check_victory(unsigned char *board)
@@ -272,8 +300,12 @@ game_state_clone(struct game_state *copy, struct game_state *orig)
 }
 
 static void
-game_do_move(struct game_state *state)
+game_do_moves(struct ai_node *node, int depth, unsigned char maximizing_player)
 {
+	// for all seven possible moves
+	for (int i = 0; i < NB_COLS; i++) {
+		node->childs[i] = malloc(sizeof(struct ai_node));
+	}
 
 }
 
@@ -306,10 +338,6 @@ ai_del_child(struct ai_node *n, int index)
 static void
 ai_build_tree(struct ai_state *ai)
 {
-	// for all seven possible moves
-	for (int i = 0; i < NB_COLS; i++) {
-		ai->root->childs[i] = malloc(sizeof(struct ai_node));
-	}
 }
 
 static int
