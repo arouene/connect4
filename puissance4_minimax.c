@@ -153,31 +153,36 @@ check_4_inrow(unsigned char *board, int startx, int starty, int dirx, int diry)
 }
 
 static int
-check_vertical_score(unsigned char *board)
+check_vertical_score(unsigned char *board, unsigned char player)
 {
-	int score_player_1 = 0, score_player_2 = 0;
-	int score[3] = {0};
-	int temp_score = 0;
-	unsigned char temp_player = 0;
+	int total_score = 0;
+	int partial_score, temp_score;
+	unsigned char temp_player;
 
 	for (int i = 0; i < NB_COLS; i++) {
-		temp_score = 0;
+		temp_score = 1; partial_score = 0;
 		temp_player = board[i];
 		for (int j = 1; j < NB_LINES; j++) {
-			unsigned char player = board[j * NB_COLS + i];
-			if (player == temp_player) {
+			unsigned char color = board[j * NB_COLS + i];
+
+			if (color == temp_player) {
 				temp_score++;
 			} else {
-				if (score[player] < temp_score)
-					score[player] = temp_score;
-				temp_score = 0;
-				temp_player = player;
+				if (temp_player == player && temp_score > 1 && partial_score < temp_score)
+					partial_score = temp_score;
+
+				temp_score = 1;
+				temp_player = color;
 			}
 		}
-		score_player_1 += score[PLAYER_1];
-		score_player_2 += score[PLAYER_2];
-		score[PLAYER_1] = 0; score[PLAYER_2] = 0;
+		// last count
+		if (temp_player == player && temp_score > 1 && partial_score < temp_score)
+			partial_score = temp_score;
+
+		total_score += partial_score;
 	}
+
+	return total_score;
 }
 
 
